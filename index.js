@@ -1,3 +1,5 @@
+const express = require('express');
+const app = express();
 const TelegramBot = require('node-telegram-bot-api');
 
 const token = process.env.BOT_TOKEN;
@@ -162,6 +164,16 @@ Send screenshot after payment to:
    "❌ Payment Cancelled");
  }
 
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('MyFlix Bot Running');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 console.log("MyFlix Bot Running...");
