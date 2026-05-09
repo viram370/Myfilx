@@ -173,11 +173,11 @@ function getPlanBenefits(plan){
 ❌ No Premium Access`;
 }
 
-
 // =========================
 // FILE ID LOGGER
 // =========================
 
+// PHOTO
 bot.on('photo', (msg) => {
 
   const photo = msg.photo;
@@ -190,10 +190,28 @@ bot.on('photo', (msg) => {
 });
 
 
+// VIDEO
 bot.on('video', (msg) => {
 
   console.log("VIDEO FILE ID:");
   console.log(msg.video.file_id);
+
+});
+
+
+// DOCUMENT VIDEO
+bot.on('document', (msg) => {
+
+  console.log("DOCUMENT FILE ID:");
+  console.log(msg.document.file_id);
+
+});
+
+
+// ANY MESSAGE DEBUG
+bot.on('message', (msg) => {
+
+  console.log(JSON.stringify(msg,null,2));
 
 });
 
