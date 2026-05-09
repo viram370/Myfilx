@@ -1,3 +1,7 @@
+// =========================
+// REQUIRED PACKAGES
+// =========================
+
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 
@@ -15,9 +19,52 @@ bot.setWebHook(`${RENDER_URL}/bot${token}`);
 
 app.use(express.json());
 
+
+// =========================
+// ADMIN
+// =========================
+
 const ADMIN_ID = 6097315530;
 
+
+// =========================
+// USER DATABASE
+// =========================
+
 const users = {};
+
+
+// =========================
+// SAMPLE ANIME DATABASE
+// Replace file IDs yourself
+// =========================
+
+const animeDB = {
+
+  "anime-name": {
+
+    "season 1": {
+
+      hindi: [
+        "EP1_FILE_ID",
+        "EP2_FILE_ID"
+      ],
+
+      english: [
+        "EP1_FILE_ID",
+        "EP2_FILE_ID"
+      ]
+
+    }
+
+  }
+
+};
+
+
+// =========================
+// USER SYSTEM
+// =========================
 
 function ensureUser(chatId){
 
@@ -25,59 +72,110 @@ function ensureUser(chatId){
 
     users[chatId] = {
       plan: "Free",
-      balance: 0
+      balance: 0,
+      expiry: null
     };
 
   }
 
 }
 
+
+function checkExpiry(chatId){
+
+  const user = users[chatId];
+
+  if(
+    user.expiry &&
+    Date.now() > user.expiry
+  ){
+
+    user.plan = "Free";
+    user.expiry = null;
+
+  }
+
+}
+
+
+// =========================
+// PLAN ACCESS SYSTEM
+// =========================
+
+function canUseAnime(plan){
+
+  return (
+    plan === "20" ||
+    plan === "50" ||
+    plan === "100"
+  );
+
+}
+
+function canUseMovie(plan){
+
+  return (
+    plan === "100"
+  );
+
+}
+
+function canUseWebseries(plan){
+
+  return (
+    plan === "50" ||
+    plan === "100"
+  );
+
+}
+
+
+// =========================
+// PLAN BENEFITS
+// =========================
+
 function getPlanBenefits(plan){
 
   if(plan === "20"){
     return `
-🍿 ₹20 Anime Basic Plan
+🍿 ₹20 Anime Basic
 
-✅ Anime Only
-✅ Hindi Dubbed Anime
-✅ 480p Streaming
-✅ Download Available
-✅ Popular Anime Access`;
+✅ Anime Access
+✅ Hindi Dubbed
+✅ 480p Quality
+✅ Downloads`;
   }
 
   if(plan === "50"){
     return `
-🎬 ₹50 Anime + WebSeries Plan
+🎬 ₹50 Anime + WebSeries
 
-✅ Anime + WebSeries
-✅ 720p HD Quality
-✅ Hindi Content
-✅ Some English Content
-✅ Download Available`;
+✅ Anime Access
+✅ WebSeries Access
+✅ 720p HD
+✅ Hindi + Some English`;
   }
 
   if(plan === "100"){
     return `
-🔥 ₹100 Premium HD Plan
+🔥 ₹100 Premium HD
 
-✅ Anime + WebSeries + Movies
-✅ Bollywood & Telugu Movies
-✅ Hindi + English Support
-✅ 720p HD Streaming
-✅ Premium Access
-✅ Download Available`;
+✅ Anime Access
+✅ Movies Access
+✅ WebSeries Access
+✅ 720p HD
+✅ Hindi + English`;
   }
 
   return `
 🆓 Free Plan
 
-❌ No Premium Access
-❌ Limited Features`;
+❌ No Premium Access`;
 }
 
 
 // =========================
-// GET FILE ID SYSTEM
+// FILE ID LOGGER
 // =========================
 
 bot.on('photo', (msg) => {
@@ -90,6 +188,7 @@ bot.on('photo', (msg) => {
   console.log(fileId);
 
 });
+
 
 bot.on('video', (msg) => {
 
@@ -109,6 +208,8 @@ bot.onText(/\/start/, (msg) => {
 
   ensureUser(chatId);
 
+  checkExpiry(chatId);
+
   bot.sendMessage(chatId,
 `🎬 Welcome To MyFlix Premium
 
@@ -120,12 +221,10 @@ Watch Anime, Movies & WebSeries directly on Telegram 📺
 
 • Fast streaming
 • Download support
-• Hindi dubbed content
 • HD quality
-• Premium anime & webseries
+• Premium content
 • Regular updates
 • Waitlist system
-• Trending uploads
 
 Choose an option below 👇`,
 {
@@ -143,7 +242,7 @@ Choose an option below 👇`,
 
 
 // =========================
-// MESSAGE HANDLER
+// MAIN MESSAGE HANDLER
 // =========================
 
 bot.on('message', (msg) => {
@@ -153,39 +252,50 @@ bot.on('message', (msg) => {
 
   ensureUser(chatId);
 
+  checkExpiry(chatId);
+
+
+  // =========================
+  // SEARCH
+  // =========================
+
   if(text === "🔍 Search"){
 
     bot.sendMessage(chatId,
-`🔍 MyFlix Search System
+`🔍 Search Commands
 
 ━━━━━━━━━━━━━━
-🎌 Anime Search
+🎌 Anime
 ━━━━━━━━━━━━━━
 
-/anime anime-name
+/anime anime-name season 1
+
+Example:
+• /anime anime-name season 1
+• /anime anime-name season 1 english
 
 ━━━━━━━━━━━━━━
-🎬 Movie Search
+🎬 Movies
 ━━━━━━━━━━━━━━
 
 /movie movie-name
 
 ━━━━━━━━━━━━━━
-📺 WebSeries Search
+📺 WebSeries
 ━━━━━━━━━━━━━━
 
-/webseries series-name
-
-⚠️ Search results depend on your subscription plan.`);
+/webseries series-name`);
   }
 
+
+  // =========================
+  // ACCOUNT MENU
+  // =========================
 
   if(text === "👤 Account"){
 
     bot.sendMessage(chatId,
-`👤 MyFlix Account Center
-
-Manage your subscription and account here.`,
+`👤 MyFlix Account Center`,
 {
   reply_markup:{
     keyboard:[
@@ -199,9 +309,11 @@ Manage your subscription and account here.`,
   }
 
 
-  if(text === "👤 Account Info"){
+  // =========================
+  // ACCOUNT INFO
+  // =========================
 
-    const userPlan = users[chatId].plan;
+  if(text === "👤 Account Info"){
 
     bot.sendMessage(chatId,
 `👤 MyFlix Premium Account
@@ -210,16 +322,27 @@ Manage your subscription and account here.`,
 📌 Account Details
 ━━━━━━━━━━━━━━
 
-🆔 User ID: ${chatId}
-💎 Current Plan: ${userPlan}
-💰 Wallet Balance: ₹${users[chatId].balance}
-📅 Subscription Status: Active / Inactive
+🆔 User ID:
+${chatId}
+
+💎 Current Plan:
+${users[chatId].plan}
+
+💰 Wallet Balance:
+₹${users[chatId].balance}
+
+📅 Plan Expiry:
+${
+ users[chatId].expiry
+ ? new Date(users[chatId].expiry).toLocaleDateString()
+ : "No Active Plan"
+}
 
 ━━━━━━━━━━━━━━
-🎁 Your Plan Benefits
+🎁 Plan Benefits
 ━━━━━━━━━━━━━━
 
-${getPlanBenefits(userPlan)}
+${getPlanBenefits(users[chatId].plan)}
 
 ━━━━━━━━━━━━━━
 🆘 Support
@@ -229,6 +352,10 @@ ${getPlanBenefits(userPlan)}
   }
 
 
+  // =========================
+  // PLANS
+  // =========================
+
   if(text === "💎 Plans"){
 
     bot.sendMessage(chatId,
@@ -237,53 +364,51 @@ ${getPlanBenefits(userPlan)}
 ━━━━━━━━━━━━━━
 🍿 ₹20 / Month
 ━━━━━━━━━━━━━━
-• Anime only
-• Hindi dubbed
-• 480p quality
+
+✅ Anime Only
+✅ Hindi Dubbed
+✅ 480p Quality
 
 ━━━━━━━━━━━━━━
 🎬 ₹50 / Month
 ━━━━━━━━━━━━━━
-• Anime + WebSeries
-• 720p quality
-• Hindi + Some English
+
+✅ Anime + WebSeries
+✅ 720p HD
+✅ Hindi + English
 
 ━━━━━━━━━━━━━━
 🔥 ₹100 / Month
 ━━━━━━━━━━━━━━
-• Anime + Movies + WebSeries
-• HD quality
-• Hindi + English
 
-📞 Support:
-@MyflixO`);
+✅ Anime + Movies + WebSeries
+✅ Premium HD
+✅ Hindi + English`);
   }
 
+
+  // =========================
+  // PAYMENT
+  // =========================
 
   if(text === "💳 Payment"){
 
     bot.sendMessage(chatId,
 `💳 MyFlix Payment Center
 
-━━━━━━━━━━━━━━
-👤 Payment Details
-━━━━━━━━━━━━━━
-
-🏷 Name:
+👤 Name:
 Garming hack king
 
-💰 UPI ID:
+💰 UPI:
 viramdevraj20@fam
 
-━━━━━━━━━━━━━━
-📌 Select Plan
-━━━━━━━━━━━━━━`,
+Select your plan below 👇`,
 {
   reply_markup:{
     inline_keyboard:[
-      [{text:"🍿 Buy ₹20 Plan",callback_data:"pay20"}],
-      [{text:"🎬 Buy ₹50 Plan",callback_data:"pay50"}],
-      [{text:"🔥 Buy ₹100 Plan",callback_data:"pay100"}]
+      [{text:"🍿 ₹20 Plan",callback_data:"pay20"}],
+      [{text:"🎬 ₹50 Plan",callback_data:"pay50"}],
+      [{text:"🔥 ₹100 Plan",callback_data:"pay100"}]
     ]
   }
 });
@@ -291,52 +416,63 @@ viramdevraj20@fam
   }
 
 
+  // =========================
+  // WAITLIST
+  // =========================
+
   if(text === "📝 Waitlist"){
 
     bot.sendMessage(chatId,
-`📝 MyFlix Waitlist System
+`📝 MyFlix Waitlist
 
-Request your favorite:
+Request:
 🎌 Anime
 🎬 Movies
 📺 WebSeries
 
-Popular requests may be uploaded faster.
+Popular requests may upload faster.
 
-Send request to:
 👉 @MyflixO`);
   }
 
 
+  // =========================
+  // SUPPORT
+  // =========================
+
   if(text === "🆘 Support"){
 
     bot.sendMessage(chatId,
-`🆘 MyFlix Support Center
+`🆘 Official Support
 
 Issues:
 • Payments
 • Missing content
 • Activation problems
-• Download issues
 
-👤 Official Support:
 👉 @MyflixO`);
   }
 
 
+  // =========================
+  // TERMS
+  // =========================
+
   if(text === "📜 Terms & Privacy"){
 
     bot.sendMessage(chatId,
-`📜 MyFlix Terms & Privacy
+`📜 Terms & Privacy
 
 • Subscription fees are non-refundable
 • Content may take time to upload
 • Sharing accounts may result in suspension
-• Abuse or spam may result in restriction
-
-🔒 User data is not sold.`);
+• Abuse may result in restriction`);
   }
 
+
+  // =========================
+  // BACK
+  // =========================
 
   if(text === "🔙 Back"){
 
@@ -359,44 +495,138 @@ Issues:
 
 
 // =========================
-// SEARCH COMMANDS
+// ANIME COMMAND
 // =========================
 
-bot.onText(/\/anime (.+)/, (msg, match) => {
+bot.onText(/\/anime (.+)/i, async (msg, match) => {
 
   const chatId = msg.chat.id;
 
-  bot.sendMessage(chatId,
-`🎌 Anime search currently unavailable.
+  ensureUser(chatId);
 
-Use waitlist:
-👉 @MyflixO`);
+  checkExpiry(chatId);
+
+  if(!canUseAnime(users[chatId].plan)){
+
+    return bot.sendMessage(chatId,
+`⚠️ Buy a premium plan to access Anime.`);
+  }
+
+  const input = match[1].toLowerCase();
+
+  let language = "hindi";
+
+  if(input.includes("english")){
+    language = "english";
+  }
+
+  const cleaned = input
+    .replace("english","")
+    .replace("hindi","")
+    .trim();
+
+  const parts = cleaned.split("season");
+
+  if(parts.length < 2){
+
+    return bot.sendMessage(chatId,
+`❌ Correct Format:
+
+/anime anime-name season 1
+/anime anime-name season 1 english`);
+  }
+
+  const animeName = parts[0].trim();
+
+  const season = "season " + parts[1].trim();
+
+  const anime = animeDB[animeName];
+
+  if(!anime){
+
+    return bot.sendMessage(chatId,
+    `❌ Anime not found.`);
+  }
+
+  if(!anime[season]){
+
+    return bot.sendMessage(chatId,
+    `❌ Season not found.`);
+  }
+
+  const episodes = anime[season][language];
+
+  if(!episodes){
+
+    return bot.sendMessage(chatId,
+    `❌ ${language} language not available.`);
+  }
+
+  bot.sendMessage(chatId,
+`🎌 Sending ${animeName} ${season}
+
+🌐 Language:
+${language}`);
+
+  for(const ep of episodes){
+
+    await bot.sendVideo(chatId, ep);
+
+    await new Promise(r => setTimeout(r,1500));
+
+  }
+
 });
 
+
+// =========================
+// MOVIE COMMAND
+// =========================
 
 bot.onText(/\/movie (.+)/, (msg, match) => {
 
   const chatId = msg.chat.id;
 
-  bot.sendMessage(chatId,
-`🎬 Movie search currently unavailable.
+  ensureUser(chatId);
 
-Use waitlist:
-👉 @MyflixO`);
+  checkExpiry(chatId);
+
+  if(!canUseMovie(users[chatId].plan)){
+
+    return bot.sendMessage(chatId,
+`⚠️ ₹100 Premium Plan required for Movies.`);
+  }
+
+  bot.sendMessage(chatId,
+`🎬 Movie system ready.
+
+Add your own movie database.`);
 });
 
+
+// =========================
+// WEBSERIES COMMAND
+// =========================
 
 bot.onText(/\/webseries (.+)/, (msg, match) => {
 
   const chatId = msg.chat.id;
 
+  ensureUser(chatId);
+
+  checkExpiry(chatId);
+
+  if(!canUseWebseries(users[chatId].plan)){
+
+    return bot.sendMessage(chatId,
+`⚠️ Upgrade to ₹50 or ₹100 plan for WebSeries.`);
+  }
+
   bot.sendMessage(chatId,
-`📺 WebSeries search currently unavailable.
+`📺 WebSeries system ready.
 
-Use waitlist:
-👉 @MyflixO`);
+Add your own webseries database.`);
 });
-
 
 // =========================
 // PAYMENT BUTTONS
@@ -415,14 +645,34 @@ bot.on("callback_query",(query)=>{
      caption:
 `🍿 ₹20 Anime Basic Plan
 
-💰 UPI:
-viramdevraj20@fam
+━━━━━━━━━━━━━━
+💰 Payment Details
+━━━━━━━━━━━━━━
 
 👤 Name:
 Garming hack king
 
+💳 UPI ID:
+viramdevraj20@fam
+
+━━━━━━━━━━━━━━
+📌 Plan Benefits
+━━━━━━━━━━━━━━
+
+✅ Anime Access
+✅ Hindi Dubbed
+✅ 480p Quality
+✅ Download Support
+✅ 30 Days Validity
+
+━━━━━━━━━━━━━━
+⚠️ Important
+━━━━━━━━━━━━━━
+
 📩 Send payment screenshot to:
-@MyflixO`
+@MyflixO
+
+⚠️ Fake screenshots may result in permanent ban.`
    });
 
  }
@@ -435,14 +685,35 @@ Garming hack king
      caption:
 `🎬 ₹50 Anime + WebSeries Plan
 
-💰 UPI:
-viramdevraj20@fam
+━━━━━━━━━━━━━━
+💰 Payment Details
+━━━━━━━━━━━━━━
 
 👤 Name:
 Garming hack king
 
+💳 UPI ID:
+viramdevraj20@fam
+
+━━━━━━━━━━━━━━
+📌 Plan Benefits
+━━━━━━━━━━━━━━
+
+✅ Anime Access
+✅ WebSeries Access
+✅ 720p HD Quality
+✅ Hindi + Some English
+✅ Download Support
+✅ 30 Days Validity
+
+━━━━━━━━━━━━━━
+⚠️ Important
+━━━━━━━━━━━━━━
+
 📩 Send payment screenshot to:
-@MyflixO`
+@MyflixO
+
+⚠️ Fake screenshots may result in permanent ban.`
    });
 
  }
@@ -455,14 +726,36 @@ Garming hack king
      caption:
 `🔥 ₹100 Premium HD Plan
 
-💰 UPI:
-viramdevraj20@fam
+━━━━━━━━━━━━━━
+💰 Payment Details
+━━━━━━━━━━━━━━
 
 👤 Name:
 Garming hack king
 
+💳 UPI ID:
+viramdevraj20@fam
+
+━━━━━━━━━━━━━━
+📌 Plan Benefits
+━━━━━━━━━━━━━━
+
+✅ Anime Access
+✅ Movies Access
+✅ WebSeries Access
+✅ 720p HD Streaming
+✅ Hindi + English
+✅ Download Support
+✅ 30 Days Validity
+
+━━━━━━━━━━━━━━
+⚠️ Important
+━━━━━━━━━━━━━━
+
 📩 Send payment screenshot to:
-@MyflixO`
+@MyflixO
+
+⚠️ Fake screenshots may result in permanent ban.`
    });
 
  }
@@ -487,15 +780,22 @@ bot.onText(/\/setplan (.+) (.+)/,(msg,match)=>{
 
  users[userId].plan = plan;
 
+ users[userId].expiry =
+   Date.now() + (30 * 24 * 60 * 60 * 1000);
+
  bot.sendMessage(userId,
 `✅ Subscription Activated
 
-💎 Active Plan: ₹${plan}/month
+💎 Active Plan:
+₹${plan}/month
 
-Thank you for subscribing to MyFlix Premium 🎬`);
+📅 Validity:
+30 Days
+
+Thank you for subscribing 🎬`);
 
  bot.sendMessage(msg.chat.id,
-`✅ User plan updated successfully.`);
+`✅ User plan updated.`);
 });
 
 
