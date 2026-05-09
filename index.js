@@ -15,13 +15,26 @@ const bot = new TelegramBot(token, {
   }
 });
 
-bot.deleteWebHook();
+bot.deleteWebHook({ drop_pending_updates: true });
 
 bot.on("polling_error", (error) => {
-  console.log("Polling Error:", error.code);
+  console.log("Polling Error:", error.message);
 });
 
 const users = {};
+
+function ensureUser(chatId){
+
+  if(!users[chatId]){
+
+    users[chatId] = {
+      plan: "Free",
+      balance: 0
+    };
+
+  }
+
+}
 
 function getPlanBenefits(plan){
 
@@ -33,7 +46,7 @@ function getPlanBenefits(plan){
 ✅ Hindi Dubbed Anime
 ✅ 480p Streaming
 ✅ Download Available
-✅ Access To Popular Anime
+✅ Popular Anime Access
 ⚠️ Newly Released Anime May Take Time`;
   }
 
@@ -46,7 +59,7 @@ function getPlanBenefits(plan){
 ✅ Hindi Content
 ✅ Some English Content
 ✅ Download Available
-✅ Faster Access To Trending Uploads`;
+✅ Trending Upload Priority`;
   }
 
   if(plan === "100"){
@@ -57,7 +70,7 @@ function getPlanBenefits(plan){
 ✅ Bollywood & Telugu Movies
 ✅ Hindi + English Support
 ✅ 720p HD Streaming
-✅ Premium Access
+✅ Premium Content Access
 ✅ Trending Content Priority
 ✅ Download Available`;
   }
@@ -75,15 +88,10 @@ bot.onText(/\/start/, (msg) => {
 
   const chatId = msg.chat.id;
 
-  if(!users[chatId]){
-    users[chatId] = {
-      plan: "Free",
-      balance: 0
-    };
-  }
+  ensureUser(chatId);
 
   bot.sendMessage(chatId,
-`🎬 Welcome to MyFlix Premium
+`🎬 Welcome To MyFlix Premium
 
 Watch Anime, Movies & WebSeries directly on Telegram 📺
 
@@ -97,7 +105,7 @@ Watch Anime, Movies & WebSeries directly on Telegram 📺
 • HD quality
 • Premium anime & webseries
 • Regular updates
-• Waitlist request system
+• Advanced waitlist system
 • Trending uploads
 
 Choose an option below 👇`,
@@ -119,12 +127,12 @@ bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
 
+  ensureUser(chatId);
+
   if(text === "🔍 Search"){
 
     bot.sendMessage(chatId,
 `🔍 MyFlix Search System
-
-Use these commands to search content:
 
 ━━━━━━━━━━━━━━
 🎌 Anime Search
@@ -132,7 +140,7 @@ Use these commands to search content:
 
 /anime anime-name
 
-Example:
+Examples:
 • /anime naruto
 • /anime one piece
 
@@ -142,7 +150,7 @@ Example:
 
 /movie movie-name
 
-Example:
+Examples:
 • /movie kgf
 • /movie avengers
 
@@ -152,11 +160,11 @@ Example:
 
 /webseries series-name
 
-Example:
+Examples:
 • /webseries money heist
 • /webseries stranger things
 
-⚠️ Search results depend on your current subscription plan.`);
+⚠️ Search results depend on your subscription plan.`);
   }
 
   if(text === "👤 Account"){
@@ -226,6 +234,7 @@ Official Support:
 ━━━━━━━━━━━━━━
 🍿 ₹20 / Month — Anime Basic
 ━━━━━━━━━━━━━━
+
 • Anime only
 • Hindi dubbed
 • 480p quality
@@ -235,6 +244,7 @@ Official Support:
 ━━━━━━━━━━━━━━
 🎬 ₹50 / Month — Anime + WebSeries
 ━━━━━━━━━━━━━━
+
 • Anime + WebSeries
 • 720p quality
 • Hindi available
@@ -244,6 +254,7 @@ Official Support:
 ━━━━━━━━━━━━━━
 🔥 ₹100 / Month — Premium HD
 ━━━━━━━━━━━━━━
+
 • Anime + WebSeries + Movies
 • Bollywood & Telugu Movies
 • Hindi + English support
@@ -411,6 +422,8 @@ bot.onText(/\/anime (.+)/, (msg, match) => {
   const chatId = msg.chat.id;
   const anime = match[1];
 
+  ensureUser(chatId);
+
   bot.sendMessage(chatId,
 `🎌 Searching Anime:
 "${anime}"
@@ -425,6 +438,8 @@ bot.onText(/\/movie (.+)/, (msg, match) => {
 
   const chatId = msg.chat.id;
   const movie = match[1];
+
+  ensureUser(chatId);
 
   bot.sendMessage(chatId,
 `🎬 Searching Movie:
@@ -441,6 +456,8 @@ bot.onText(/\/webseries (.+)/, (msg, match) => {
   const chatId = msg.chat.id;
   const webseries = match[1];
 
+  ensureUser(chatId);
+
   bot.sendMessage(chatId,
 `📺 Searching WebSeries:
 "${webseries}"
@@ -455,6 +472,8 @@ bot.on("callback_query", (query) => {
 
   const chatId = query.message.chat.id;
   const data = query.data;
+
+  ensureUser(chatId);
 
   let amount = 0;
 
