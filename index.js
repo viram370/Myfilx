@@ -6,16 +6,76 @@ const app = express();
 const token = process.env.BOT_TOKEN;
 
 const bot = new TelegramBot(token, {
-  polling: true
+  polling: {
+    interval: 300,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+});
+
+bot.deleteWebHook();
+
+bot.on("polling_error", (error) => {
+  console.log("Polling Error:", error.code);
 });
 
 const users = {};
+
+function getPlanBenefits(plan){
+
+  if(plan === "20"){
+    return `
+🍿 ₹20 Anime Basic Plan
+
+✅ Anime Only
+✅ Hindi Dubbed Anime
+✅ 480p Streaming
+✅ Download Available
+✅ Access To Popular Anime
+⚠️ Newly Released Anime May Take Time`;
+  }
+
+  if(plan === "50"){
+    return `
+🎬 ₹50 Anime + WebSeries Plan
+
+✅ Anime + WebSeries
+✅ 720p HD Quality
+✅ Hindi Content
+✅ Some English Content
+✅ Download Available
+✅ Faster Access To Trending Uploads`;
+  }
+
+  if(plan === "100"){
+    return `
+🔥 ₹100 Premium HD Plan
+
+✅ Anime + WebSeries + Movies
+✅ Bollywood & Telugu Movies
+✅ Hindi + English Support
+✅ 720p HD Streaming
+✅ Premium Access
+✅ Trending Content Priority
+✅ Download Available`;
+  }
+
+  return `
+🆓 Free Plan
+
+❌ No Premium Access
+❌ Limited Features
+
+Upgrade your plan to unlock premium content.`;
+}
 
 bot.onText(/\/start/, (msg) => {
 
   const chatId = msg.chat.id;
 
-  if (!users[chatId]) {
+  if(!users[chatId]){
     users[chatId] = {
       plan: "Free",
       balance: 0
@@ -27,13 +87,18 @@ bot.onText(/\/start/, (msg) => {
 
 Watch Anime, Movies & WebSeries directly on Telegram 📺
 
-✨ Features:
+━━━━━━━━━━━━━━
+✨ Features
+━━━━━━━━━━━━━━
+
 • Fast streaming
 • Download support
 • Hindi dubbed content
 • HD quality
 • Premium anime & webseries
 • Regular updates
+• Waitlist request system
+• Trending uploads
 
 Choose an option below 👇`,
 {
@@ -61,19 +126,35 @@ bot.on('message', (msg) => {
 
 Use these commands to search content:
 
-🎌 Anime:
- /anime anime-name
+━━━━━━━━━━━━━━
+🎌 Anime Search
+━━━━━━━━━━━━━━
 
-🎬 Movies:
- /movie movie-name
+/anime anime-name
 
-📺 WebSeries:
- /webseries series-name
-
-Examples:
+Example:
 • /anime naruto
+• /anime one piece
+
+━━━━━━━━━━━━━━
+🎬 Movie Search
+━━━━━━━━━━━━━━
+
+/movie movie-name
+
+Example:
 • /movie kgf
+• /movie avengers
+
+━━━━━━━━━━━━━━
+📺 WebSeries Search
+━━━━━━━━━━━━━━
+
+/webseries series-name
+
+Example:
 • /webseries money heist
+• /webseries stranger things
 
 ⚠️ Search results depend on your current subscription plan.`);
   }
@@ -83,7 +164,7 @@ Examples:
     bot.sendMessage(chatId,
 `👤 MyFlix Account Center
 
-Manage your subscription, payments, and account details from here.
+Manage your subscription, plans, payments, and account details here.
 
 Select an option below 👇`,
 {
@@ -100,14 +181,41 @@ Select an option below 👇`,
 
   if(text === "👤 Account Info"){
 
+    const userPlan = users[chatId].plan;
+
     bot.sendMessage(chatId,
-`👤 Account Information
+`👤 MyFlix Premium Account
 
-💎 Current Plan: ${users[chatId].plan}
+━━━━━━━━━━━━━━
+📌 Account Details
+━━━━━━━━━━━━━━
+
+🆔 User ID: ${chatId}
+💎 Current Plan: ${userPlan}
 💰 Wallet Balance: ₹${users[chatId].balance}
-📅 Subscription Status: Active/Inactive
+📅 Subscription Status: Active / Inactive
 
-Upgrade your plan to unlock premium content.`);
+━━━━━━━━━━━━━━
+🎁 Your Plan Benefits
+━━━━━━━━━━━━━━
+
+${getPlanBenefits(userPlan)}
+
+━━━━━━━━━━━━━━
+⚠️ Important Information
+━━━━━━━━━━━━━━
+
+• Content availability depends on plan
+• Newly released content may take time
+• Some content may require waitlist request
+• Sharing account access may result in restriction
+
+━━━━━━━━━━━━━━
+🆘 Need Help?
+━━━━━━━━━━━━━━
+
+Official Support:
+👉 @MyflixO`);
   }
 
   if(text === "💎 Plans"){
@@ -122,7 +230,7 @@ Upgrade your plan to unlock premium content.`);
 • Hindi dubbed
 • 480p quality
 • Download available
-• Newly released anime may take time to upload
+• Newly released anime may take time
 
 ━━━━━━━━━━━━━━
 🎬 ₹50 / Month — Anime + WebSeries
@@ -130,7 +238,7 @@ Upgrade your plan to unlock premium content.`);
 • Anime + WebSeries
 • 720p quality
 • Hindi available
-• English available for selected content
+• Some English content
 • Download available
 
 ━━━━━━━━━━━━━━
@@ -140,16 +248,16 @@ Upgrade your plan to unlock premium content.`);
 • Bollywood & Telugu Movies
 • Hindi + English support
 • 720p HD quality
-• Fast access to trending content
+• Trending content priority
 • Download available
 
 ⚠️ Important:
-• Popular content gets uploaded first
-• Some content may take time to be added
-• Old/rare content may not be available
+• Popular content uploaded first
+• Old content may not be available
 • Use waitlist for requests
 
-📞 Support: @MyflixO`);
+📞 Support:
+@MyflixO`);
   }
 
   if(text === "💳 Payment"){
@@ -159,12 +267,15 @@ Upgrade your plan to unlock premium content.`);
 
 Choose your preferred subscription plan below.
 
-After payment:
-✅ Send screenshot to support
-✅ Verification may take a few minutes
-✅ Your plan will activate after confirmation
+━━━━━━━━━━━━━━
+📌 Payment Information
+━━━━━━━━━━━━━━
 
-⚠️ Do not spam payment requests.`,
+✅ Send screenshot after payment
+✅ Verification may take a few minutes
+✅ Plan activates after confirmation
+
+⚠️ Fake payment screenshots may result in restriction.`,
 {
   reply_markup:{
     inline_keyboard:[
@@ -191,15 +302,13 @@ Can’t find your favorite Anime, Movie, or WebSeries?
 • Users can request any Anime, Movie, or WebSeries
 • Popular requests may get uploaded faster
 • Trending content gets higher priority
-• Newly released content may take time to upload
-• Some old or rare content may not be available
+• Community requested content may be added first
 
 ━━━━━━━━━━━━━━
 📌 Request Format
 ━━━━━━━━━━━━━━
 
-Send details like:
-
+Send:
 🎌 Anime Name
 🎬 Movie Name
 📺 WebSeries Name
@@ -210,14 +319,14 @@ Optional:
 • Season/Episode
 
 ━━━━━━━━━━━━━━
-🗳 Community Priority System
+🗳 Community Priority
 ━━━━━━━━━━━━━━
 
 The more users requesting the same content,
-the higher the chance it gets added quickly.
+the higher chance it gets uploaded quickly.
 
 ━━━━━━━━━━━━━━
-📩 Send Your Request
+📩 Send Request
 ━━━━━━━━━━━━━━
 
 👉 @MyflixO`);
@@ -228,22 +337,24 @@ the higher the chance it gets added quickly.
     bot.sendMessage(chatId,
 `🆘 MyFlix Support Center
 
-Facing problems with:
+Facing issues with:
 • Payments
-• Access issues
 • Missing content
 • Subscription activation
 • Download problems
-• Search issues
+• Search problems
+• Account access
 
-Contact official support below 👇
+━━━━━━━━━━━━━━
+📩 Official Support
+━━━━━━━━━━━━━━
 
 👤 Owner & Support:
 @MyflixO
 
-⏰ Reply time may vary depending on availability.
+⏰ Reply time may vary.
 
-⚠️ Please avoid spam messages.`);
+⚠️ Avoid spam messages.`);
   }
 
   if(text === "📜 Terms & Privacy"){
@@ -251,29 +362,35 @@ Contact official support below 👇
     bot.sendMessage(chatId,
 `📜 MyFlix Terms & Privacy
 
-By using MyFlix, you agree to the following terms:
+━━━━━━━━━━━━━━
+📌 Terms Of Service
+━━━━━━━━━━━━━━
 
-• Subscription fees are non-refundable after activation
-• Content availability may change anytime
-• Newly released content may take time to upload
-• Sharing premium access/accounts may result in suspension
-• Some content may only be available in selected languages
-• MyFlix mainly focuses on trending and popular content
-• Abuse, spam, or misuse may lead to permanent restriction
+• Subscription fees are non-refundable
+• Content availability may change
+• Newly released content may take time
+• Sharing accounts may result in suspension
+• Abuse or spam may result in restriction
 
-Privacy:
-• User payment screenshots are only used for verification
-• We do not sell personal user data
-• Basic Telegram account information may be stored for subscription management
+━━━━━━━━━━━━━━
+🔒 Privacy Policy
+━━━━━━━━━━━━━━
 
-For support:
-@MyflixO`);
+• Payment screenshots used only for verification
+• Telegram account information may be stored
+• User data is not sold
+
+━━━━━━━━━━━━━━
+🆘 Support
+━━━━━━━━━━━━━━
+
+👉 @MyflixO`);
   }
 
   if(text === "🔙 Back"){
 
     bot.sendMessage(chatId,
-`🎬 Back to Main Menu`,
+`🎬 Back To Main Menu`,
 {
   reply_markup:{
     keyboard:[
@@ -298,10 +415,10 @@ bot.onText(/\/anime (.+)/, (msg, match) => {
 `🎌 Searching Anime:
 "${anime}"
 
-⚠️ Anime not available currently or may still be uploading.
+⚠️ Anime not available currently or still uploading.
 
 Use waitlist for faster priority:
-@MyflixO`);
+👉 @MyflixO`);
 });
 
 bot.onText(/\/movie (.+)/, (msg, match) => {
@@ -313,10 +430,10 @@ bot.onText(/\/movie (.+)/, (msg, match) => {
 `🎬 Searching Movie:
 "${movie}"
 
-⚠️ Movie not available currently or may still be uploading.
+⚠️ Movie not available currently or still uploading.
 
 Use waitlist for faster priority:
-@MyflixO`);
+👉 @MyflixO`);
 });
 
 bot.onText(/\/webseries (.+)/, (msg, match) => {
@@ -328,10 +445,10 @@ bot.onText(/\/webseries (.+)/, (msg, match) => {
 `📺 Searching WebSeries:
 "${webseries}"
 
-⚠️ WebSeries not available currently or may still be uploading.
+⚠️ WebSeries not available currently or still uploading.
 
 Use waitlist for faster priority:
-@MyflixO`);
+👉 @MyflixO`);
 });
 
 bot.on("callback_query", (query) => {
@@ -373,14 +490,14 @@ Click confirm to continue payment.`,
     bot.sendMessage(chatId,
 `📱 Payment Instructions
 
-Pay ₹${amt} using the QR code/payment method.
+Pay ₹${amt} using your payment method.
 
 After payment:
 ✅ Send screenshot to @MyflixO
 ✅ Wait for verification
-✅ Your plan will activate after approval
+✅ Your plan activates after approval
 
-⚠️ Do not send fake screenshots.`);
+⚠️ Fake screenshots may result in restriction.`);
   }
 
   if(data === "cancel"){
