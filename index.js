@@ -38,21 +38,26 @@ const users = {};
 // SAMPLE ANIME DATABASE
 // Replace file IDs yourself
 // =========================
-
 const animeDB = {
 
-  "anime-name": {
+  "jujutsu kaisen": {
 
     "season 1": {
 
       hindi: [
-        "EP1_FILE_ID",
-        "EP2_FILE_ID"
-      ],
 
-      english: [
-        "EP1_FILE_ID",
-        "EP2_FILE_ID"
+        "BAACAgEAAxkBAAICLmn_C6Xz_hEo5HbIZM6mVt7imam8AAKsAwACjQUhRn2hNbdSJ8rKOwQ",
+
+        "BAACAgQAAxkBAAICL2n_C6UvGntFdoprJcWh1qPwAAG7NQACnA8AAtZOIFLBpVkEBEH9pzsE",
+
+        "BAACAgIAAxkBAAICMGn_C6U4-lsJjul3RsLm9E_NoiqVAALTKwACdS8pSl7e2L9r0wr0OwQ",
+
+        "BAACAgIAAxkBAAICMWn_C6X6jmiJ-zeh-c2QWwFYAyz7AALCLgACDo9hSjCJSJvDLRd2OwQ",
+
+        "BAACAgIAAxkBAAICMmn_C6XgoC0_eG3tuQbFI-35uzu7AALNLgACDo9hSt8cmCFInLN2OwQ",
+
+        "BAACAgEAAxkBAAICM2n_C6U8vonsVhIko02S21WwUR3KAAK0BgACbSVpRh2PUyL3-549OwQ"
+
       ]
 
     }
@@ -60,6 +65,8 @@ const animeDB = {
   }
 
 };
+
+
 
 
 // =========================
