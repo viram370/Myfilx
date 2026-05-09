@@ -410,7 +410,7 @@ bot.on("callback_query",(query)=>{
  if(data === "pay20"){
 
    bot.sendPhoto(chatId,
-   "ADD_20_RS_QR_FILE_ID",
+   "AgACAgUAAxkBAAICJWn_BX9bvt0HOVooXrS_Y7VwpOngAAIQEGsbf1P4V02Yna5OBauhAQADAgADeAADOwQ",
    {
      caption:
 `🍿 ₹20 Anime Basic Plan
@@ -430,7 +430,7 @@ Garming hack king
  if(data === "pay50"){
 
    bot.sendPhoto(chatId,
-   "ADD_50_RS_QR_FILE_ID",
+   "AgACAgUAAxkBAAICJGn_BUqfwwN0FHe7EzRRfhGHb8n2AAIPEGsbf1P4V4ijMEK46jkNAQADAgADeAADOwQ",
    {
      caption:
 `🎬 ₹50 Anime + WebSeries Plan
@@ -450,7 +450,7 @@ Garming hack king
  if(data === "pay100"){
 
    bot.sendPhoto(chatId,
-   "ADD_100_RS_QR_FILE_ID",
+   "AgACAgUAAxkBAAICI2n_BMY4S8rRS53FvZ9B71iSeybAAAIOEGsbf1P4V3jkTRZMtrsZAQADAgADeAADOwQ",
    {
      caption:
 `🔥 ₹100 Premium HD Plan
