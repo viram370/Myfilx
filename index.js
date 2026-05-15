@@ -169,6 +169,128 @@ const animeDB = {
 
       ]
 
+    },
+    "season 2": {
+
+  hindi: [
+
+    {
+      episode:1,
+      file_id:"BAACAgUAAxkBAAFJqyNqBtXvMu5LeVDK3F8AAc3J24lM0zsAAtgKAAJhsGhUQI4zjDJGTGA7BA"
+    },
+
+    {
+      episode:2,
+      file_id:"BAACAgEAAxkBAAFJqyRqBtXvJz978bki1GAPxS5GfHiHSQACKAQAAlIesUTR93zWrtvZYTsE"
+    },
+
+    {
+      episode:3,
+      file_id:"BAACAgUAAxkBAAFJqyVqBtXvfbCqmcfAQEmhQOHT4A643AACggwAArTc-FQypaWKaEdCAAE7BA"
+    },
+
+    {
+      episode:4,
+      file_id:"BAACAgUAAxkBAAFJqyZqBtXvodY_7WWMK-UVhnePOJiK8gACAg0AAlalSVXFswZDUlAG5TsE"
+    },
+
+    {
+      episode:5,
+      file_id:"BAACAgUAAxkBAAFJqydqBtXvVOeicMQhJRS2xbkM7kMTtAACbAoAAtGwkVUG_gGqWT2UmTsE"
+    },
+
+    {
+      episode:6,
+      file_id:"BAACAgQAAxkBAAFJqyhqBtXvVns1Y5-qpZZ97E3zO04GNwAC6A4AAt040VP0H1dl4kXyWDsE"
+    },
+
+    {
+      episode:7,
+      file_id:"BAACAgUAAxkBAAFJqylqBtXvvQ-HJr6ANqI6J8DmIYCmEQACSQsAAk_fIFZ-_R5TgVI7PzsE"
+    },
+
+    {
+      episode:8,
+      file_id:"BAACAgUAAxkBAAFJqypqBtXvFLQyZ6Ya-xsfGvbsUIaxuwACdAwAAnbScVbF1VHLMdACfzsE"
+    },
+
+    {
+      episode:9,
+      file_id:"BAACAgUAAxkBAAFJqytqBtXvZqSeAfy1_xY5z347JZTL4AACgA0AAmq-sVaxBgWXheP3ZDsE"
+    },
+
+    {
+      episode:10,
+      file_id:"BAACAgUAAxkBAAFJqyxqBtXvjcaRdBcl3ke1WM5G_RlgjwACYQsAAnZNAVeAcJ7uBOX5zDsE"
+    },
+
+    {
+      episode:11,
+      file_id:"BAACAgEAAxkBAAFJqy1qBtXvF6Y369TVIpb-DeDstWuSjgACsgMAApbuSUezHeoTtJgyBTsE"
+    },
+
+    {
+      episode:12,
+      file_id:"BAACAgUAAxkBAAFJqy5qBtXv7f5OL0efe94Rr1HzPAtJKgAC_Q0AAoc8kVf4uYvo5WJpajsE"
+    },
+
+    {
+      episode:13,
+      file_id:"BAACAgUAAxkBAAFJqy9qBtXvqxHFI615x3SDQfh-yiuMZQACjg0AAk7B4FdYkMiaaPOPFTsE"
+    },
+
+    {
+      episode:14,
+      file_id:"BAACAgUAAxkBAAFJqzBqBtXv6XAwZRbCCEZ7hNzgkuSpMQACuQsAAnSFKFT0ZUN9SuLN5jsE"
+    },
+
+    {
+      episode:15,
+      file_id:"BAACAgUAAxkBAAFJqzFqBtXvI2at7ae2N1VGoJfK1P9YewACjgsAAgdBeFREkeW8TZhjqDsE"
+    },
+
+    {
+      episode:16,
+      file_id:"BAACAgUAAxkBAAFJqzJqBtXv_BNZMncg10XEQ5SvqDMFaQACjgwAAlXzuFQSL3A6Tt7YEDsE"
+    },
+
+    {
+      episode:17,
+      file_id:"BAACAgUAAxkBAAFJqzNqBtXvji4zRRVzESdg2pfmWF0BbQACdQ0AAqMVAVXpD6yfwdD3fjsE"
+    },
+
+    {
+      episode:18,
+      file_id:"BAACAgUAAxkBAAFJqzRqBtXvNgKh1Qe4xxgmuairyeTp_AACfQ0AAoj7UFUd4Q_nUjxN_TsE"
+    },
+
+    {
+      episode:19,
+      file_id:"BAACAgUAAxkBAAFJqzVqBtXvjmRjxz8DiT4qJv_6QXFvRgACUQ0AAqjpmFUNSvH93aX8GzsE"
+    },
+
+    {
+      episode:20,
+      file_id:"BAACAgQAAxkBAAFJqzZqBtXv5nJp-HP_NbXcBHFyleih5gACLRQAAmk-4VGZlvE71o_4zDsE"
+    },
+
+    {
+      episode:21,
+      file_id:"BAACAgQAAxkBAAFJqzdqBtXvHKYdAghgBCMqWM6TLvGW6gAC1A4AAuO2MFJQhTJ3pTVZNzsE"
+    },
+
+    {
+      episode:22,
+      file_id:"BAACAgUAAxkBAAFJqzhqBtXvEYz7vd1zTFbPrtYDk7xVwAAC1AoAA31wVv_QOsrWcCzeOwQ"
+    },
+
+    {
+      episode:23,
+      file_id:"BAACAgUAAxkBAAFJqzlqBtXv6EV4R_J-Figj1hTRPRe0GgACag4AAkIYwVbDS59HoAwfEjsE"
+    }
+
+  ]
+
     }
 
   }
