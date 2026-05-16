@@ -29,7 +29,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
-
+const lastVideo = {};
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { webHook: true });
 
@@ -53,7 +53,12 @@ const ADMIN_ID = 6097315530;
 // SAMPLE ANIME DATABASE
 // Replace file IDs yourself
 // =========================
+bot.on("video",(msg)=>{
 
+  lastVideo[msg.chat.id] =
+    msg.video.file_id;
+
+});
 
 
 // =========================
@@ -82,57 +87,102 @@ async function checkExpiry(chatId) {
     await setDoc(ref, { ...user, plan: "Free", expiry: null });
   }
 }
+bot.onText(
+/\/saveanime (.+)/,
+async (msg,match)=>{
 
-bot.onText(/\/saveanime (.+)/, async (msg, match) => {
-  if (msg.chat.id !== ADMIN_ID) {
+  if(msg.chat.id !== ADMIN_ID){
     return;
   }
 
-  if (!msg.reply_to_message) {
-    return bot.sendMessage(msg.chat.id, `❌ Reply to a video`);
-  }
+  const fileId =
+    lastVideo[msg.chat.id];
 
-  const video = msg.reply_to_message.video;
+  if(!fileId){
 
-  if (!video) {
-    return bot.sendMessage(msg.chat.id, `❌ Replied message must contain video`);
-  }
-
-  const args = match[1].split("|");
-
-  if (args.length < 4) {
-    return bot.sendMessage(msg.chat.id,
-      `❌ Format:\n\n/saveanime anime|season|language|episode`
+    return bot.sendMessage(
+      msg.chat.id,
+`❌ Upload a video first`
     );
+
   }
 
-  const anime   = args[0].trim().toLowerCase();
-  const season  = args[1].trim().toLowerCase();
-  const language = args[2].trim().toLowerCase();
-  const episode = Number(args[3]);
+  const args =
+    match[1].split("|");
+
+  if(args.length < 3){
+
+    return bot.sendMessage(
+      msg.chat.id,
+`❌ Format:
+
+/saveanime anime|season|language`
+    );
+
+  }
+
+  const anime =
+    args[0].trim().toLowerCase();
+
+  const season =
+    args[1].trim().toLowerCase();
+
+  const language =
+    args[2].trim().toLowerCase();
+
+  const epRef = collection(
+    db,
+    "anime",
+    anime,
+    "seasons",
+    season,
+    "languages",
+    language,
+    "episodes"
+  );
+
+  const snap =
+    await getDocs(epRef);
+
+  let nextEpisode = 1;
+
+  if(!snap.empty){
+
+    nextEpisode =
+      snap.size + 1;
+
+  }
 
   await setDoc(
+
     doc(
-  db,
-  "anime",
-  anime,
-  "seasons",
-  season,
-  "languages",
-  language,
-  "episodes",
-  "ep" + episode
-),   
-  {
-    episode: episode,
-    file_id: video.file_id
-  },
-  { merge:true }
-);
+      db,
+      "anime",
+      anime,
+      "seasons",
+      season,
+      "languages",
+      language,
+      "episodes",
+      "ep" + nextEpisode
+    ),
 
+    {
+      episode:nextEpisode,
+      file_id:fileId
+    },
 
-  bot.sendMessage(msg.chat.id, `✅ Episode saved successfully`);
+    { merge:true }
+
+  );
+
+  bot.sendMessage(
+    msg.chat.id,
+`✅ Episode ${nextEpisode} saved`
+  );
+
 });
+
 
 // =========================
 // PLAN ACCESS SYSTEM
