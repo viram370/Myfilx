@@ -12,8 +12,9 @@ const {
   setDoc,
   getDoc,
   collection,
-  addDoc,
-  getDocs
+  addDoc,  
+  getDocs,
+  deleteDoc
 } = require("firebase/firestore");
 
 const app = express();
@@ -29,7 +30,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
-const lastVideo = {};
+const uploadedVideos = {};
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { webHook: true });
 
@@ -53,13 +54,22 @@ const ADMIN_ID = 6097315530;
 // SAMPLE ANIME DATABASE
 // Replace file IDs yourself
 // =========================
+
 bot.on("video",(msg)=>{
 
-  lastVideo[msg.chat.id] =
-    msg.video.file_id;
+  const chatId = msg.chat.id;
+
+  if(!uploadedVideos[chatId]){
+
+    uploadedVideos[chatId] = [];
+
+  }
+
+  uploadedVideos[chatId].push(
+    msg.video.file_id
+  );
 
 });
-
 
 // =========================
 // USER SYSTEM
@@ -95,14 +105,16 @@ async (msg,match)=>{
     return;
   }
 
-  const fileId =
-    lastVideo[msg.chat.id];
+  const chatId = msg.chat.id;
 
-  if(!fileId){
+  if(
+    !uploadedVideos[chatId] ||
+    uploadedVideos[chatId].length === 0
+  ){
 
     return bot.sendMessage(
-      msg.chat.id,
-`❌ Upload a video first`
+      chatId,
+`❌ Upload videos first`
     );
 
   }
@@ -113,7 +125,7 @@ async (msg,match)=>{
   if(args.length < 3){
 
     return bot.sendMessage(
-      msg.chat.id,
+      chatId,
 `❌ Format:
 
 /saveanime anime|season|language`
@@ -153,36 +165,178 @@ async (msg,match)=>{
 
   }
 
-  await setDoc(
+  for(
+    const fileId
+    of uploadedVideos[chatId]
+  ){
 
-    doc(
-      db,
-      "anime",
-      anime,
-      "seasons",
-      season,
-      "languages",
-      language,
-      "episodes",
-      "ep" + nextEpisode
-    ),
+    await setDoc(
 
-    {
-      episode:nextEpisode,
-      file_id:fileId
-    },
+      doc(
+        db,
+        "anime",
+        anime,
+        "seasons",
+        season,
+        "languages",
+        language,
+        "episodes",
+        "ep" + nextEpisode
+      ),
 
-    { merge:true }
+      {
+        episode:nextEpisode,
+        file_id:fileId
+      },
 
-  );
+      { merge:true }
 
-  bot.sendMessage(
-    msg.chat.id,
+    );
+
+    await bot.sendMessage(
+      chatId,
 `✅ Episode ${nextEpisode} saved`
-  );
+    );
+
+    nextEpisode++;
+
+  }
+
+  uploadedVideos[chatId] = [];
 
 });
 
+bot.onText(
+/\/deleteanime (.+)/,
+async (msg,match)=>{
+
+  if(msg.chat.id !== ADMIN_ID){
+    return;
+  }
+
+  const input =
+    match[1]
+    .trim()
+    .toLowerCase();
+
+  const parts =
+    input.split(" ");
+
+  if(parts.length < 4){
+
+    return bot.sendMessage(
+      msg.chat.id,
+`❌ Format:
+
+Delete season:
+/deleteanime anime-name season 1 hindi
+
+Delete episode:
+/deleteanime anime-name season 1 hindi 1`
+    );
+
+  }
+
+  const language =
+    parts[parts.length - 1];
+
+  let episode = null;
+
+  if(!isNaN(language)){
+
+    episode =
+      Number(language);
+
+    parts.pop();
+
+  }
+
+  const realLanguage =
+    parts[parts.length - 1];
+
+  parts.pop();
+
+  const seasonNumber =
+    parts[parts.length - 1];
+
+  parts.pop();
+
+  parts.pop();
+
+  const season =
+    "season " + seasonNumber;
+
+  const anime =
+    parts.join(" ");
+
+  // =========================
+  // DELETE SINGLE EPISODE
+  // =========================
+
+  if(episode){
+
+    await deleteDoc(
+
+      doc(
+        db,
+        "anime",
+        anime,
+        "seasons",
+        season,
+        "languages",
+        realLanguage,
+        "episodes",
+        "ep" + episode
+      )
+
+    );
+
+    return bot.sendMessage(
+      msg.chat.id,
+`✅ Episode ${episode} deleted`
+    );
+
+  }
+
+  // =========================
+  // DELETE WHOLE SEASON
+  // =========================
+
+  const epRef = collection(
+    db,
+    "anime",
+    anime,
+    "seasons",
+    season,
+    "languages",
+    realLanguage,
+    "episodes"
+  );
+
+  const snap =
+    await getDocs(epRef);
+
+  if(snap.empty){
+
+    return bot.sendMessage(
+      msg.chat.id,
+`❌ Season not found`
+    );
+
+  }
+
+  for(const d of snap.docs){
+
+    await deleteDoc(d.ref);
+
+  }
+
+  bot.sendMessage(
+    msg.chat.id,
+`✅ Full season deleted`
+  );
+
+});
 
 // =========================
 // PLAN ACCESS SYSTEM
