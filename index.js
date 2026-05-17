@@ -156,16 +156,85 @@ async function getUser(chatId) {
   const snap = await getDoc(ref);
   return snap.data();
 }
+async function checkExpiry(chatId){
 
-async function checkExpiry(chatId) {
-  const ref = doc(db, "users", String(chatId));
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-  const user = snap.data();
-  if (user.expiry && Date.now() > user.expiry) {
-    await setDoc(ref, { ...user, plan: "Free", expiry: null });
+  const ref =
+    doc(
+      db,
+      "users",
+      String(chatId)
+    );
+
+  const snap =
+    await getDoc(ref);
+
+  if(!snap.exists()) return;
+
+  const user =
+    snap.data();
+
+  if(
+    user.expiry &&
+    Date.now() > user.expiry
+  ){
+
+    const balance =
+      Number(user.balance || 0);
+
+    const result =
+      getPlanFromBalance(balance);
+
+    const leftover =
+      balance - result.used;
+
+    const extraDays =
+      Math.floor(leftover / 2);
+
+    if(result.plan === "Free"){
+
+      await setDoc(
+        ref,
+        {
+          ...user,
+          plan:"Free",
+          expiry:null,
+          balance:0
+        },
+        { merge:true }
+      );
+
+      return;
+
+    }
+
+    const totalDays =
+      result.days + extraDays;
+
+    const expiry =
+      Date.now() +
+      (
+        totalDays *
+        24 *
+        60 *
+        60 *
+        1000
+      );
+
+    await setDoc(
+      ref,
+      {
+        ...user,
+        plan:result.plan,
+        expiry:expiry,
+        balance:leftover
+      },
+      { merge:true }
+    );
+
   }
+
 }
+
 bot.onText(
 /\/saveanime (.+)/,
 async (msg,match)=>{
@@ -527,6 +596,45 @@ Choose an option below 👇`,
     }
   );
 });
+function getPlanFromBalance(balance){
+
+  if(balance >= 100){
+
+    return {
+      plan:"100",
+      used:100,
+      days:30
+    };
+
+  }
+
+  if(balance >= 50){
+
+    return {
+      plan:"50",
+      used:50,
+      days:30
+    };
+
+  }
+
+  if(balance >= 20){
+
+    return {
+      plan:"20",
+      used:20,
+      days:30
+    };
+
+  }
+
+  return {
+    plan:"Free",
+    used:0,
+    days:0
+  };
+
+}
 
 // =========================
 // MAIN MESSAGE HANDLER
@@ -968,47 +1076,133 @@ if(!codeSnap.exists()){
     );
 
   }
-if(giftData.used){
-  
-    return bot.sendMessage(
-      chatId,
+    if(giftData.used){
+
+  return bot.sendMessage(
+    chatId,
 `❌ Gift code already used.`
-    );
-
-  }
-
-  const user =
-    await getUser(chatId);
-
-  await setDoc(
-
-    doc(
-      db,
-      "users",
-      String(chatId)
-    ),
-
-    {
-      ...user,
-
-      plan:
-        giftData.plan,
-
-      expiry:
-        Date.now() +
-        (
-          giftData.days *
-          24 *
-          60 *
-          60 *
-          1000
-        )
-
-    },
-
-    { merge:true }
-
   );
+
+}
+
+const user =
+  await getUser(chatId);
+
+// =========================
+// CURRENT ACTIVE PLAN VALUE
+// =========================
+
+let activePlanValue = 0;
+
+if(user.plan === "20"){
+  activePlanValue = 20;
+}
+
+if(user.plan === "50"){
+  activePlanValue = 50;
+}
+
+if(user.plan === "100"){
+  activePlanValue = 100;
+}
+
+// =========================
+// CURRENT STORED BALANCE
+// =========================
+
+const currentBalance =
+  Number(user.balance || 0);
+
+// =========================
+// NEW GIFT VALUE
+// =========================
+
+const giftValue =
+  Number(giftData.plan || 0);
+
+// =========================
+// TOTAL BALANCE
+// =========================
+
+const totalBalance =
+  activePlanValue +
+  currentBalance +
+  giftValue;
+
+// =========================
+// GET BEST PLAN
+// =========================
+
+const result =
+  getPlanFromBalance(totalBalance);
+
+// =========================
+// LEFTOVER BALANCE
+// =========================
+
+const leftover =
+  totalBalance - result.used;
+
+// =========================
+// EXTRA DAYS
+// ₹2 = 1 DAY
+// =========================
+
+const extraDays =
+  Math.floor(leftover / 2);
+
+// =========================
+// TOTAL DAYS
+// =========================
+
+const totalDays =
+  result.days + extraDays;
+
+// =========================
+// EXPIRY
+// =========================
+
+const expiry =
+  Date.now() +
+  (
+    totalDays *
+    24 *
+    60 *
+    60 *
+    1000
+  );
+
+// =========================
+// SAVE USER
+// =========================
+
+await setDoc(
+
+  doc(
+    db,
+    "users",
+    String(chatId)
+  ),
+
+  {
+    ...user,
+
+    balance:leftover,
+
+    plan:result.plan,
+
+    expiry:expiry
+
+  },
+
+  { merge:true }
+
+);
+
+// =========================
+// MARK GIFT USED
+// =========================
+
 await setDoc(
 
   codeRef,
@@ -1023,24 +1217,31 @@ await setDoc(
   { merge:true }
 
 );
-  
 
-  return bot.sendMessage(
-    chatId,
+// =========================
+// SUCCESS MESSAGE
+// =========================
+
+return bot.sendMessage(
+  chatId,
 `✅ Gift Code Redeemed
 
 ━━━━━━━━━━━━━━
 🎁 Reward Activated
 ━━━━━━━━━━━━━━
 
-💎 Plan:
-₹${giftCodes[code].plan}
+💎 Active Plan:
+₹${result.plan}
+
+💰 Remaining Balance:
+₹${leftover}
 
 📅 Validity:
-${giftCodes[code].days} Days
+${totalDays} Days
 
 Enjoy Premium Access 🎬`
-  );
+);
+
 
   }
   // =========================
