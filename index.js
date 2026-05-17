@@ -31,6 +31,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const uploadedVideos = {};
+const redeemMode = {};
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { webHook: true });
 
@@ -49,6 +50,74 @@ const ADMIN_ID = 6097315530;
 // =========================
 // USER DATABASE
 // =========================
+bot.onText(
+/\/creategift (.+)/,
+async (msg,match)=>{
+
+  if(msg.chat.id !== ADMIN_ID){
+    return;
+  }
+
+  const args =
+    match[1].split("|");
+
+  if(args.length < 3){
+
+    return bot.sendMessage(
+      msg.chat.id,
+`❌ Format:
+
+/creategift CODE|PLAN|DAYS`
+    );
+
+  }
+
+  const code =
+    args[0]
+    .trim()
+    .toUpperCase();
+
+  const plan =
+    args[1].trim();
+
+  const days =
+    Number(args[2]);
+
+  await setDoc(
+
+    doc(
+      db,
+      "giftcodes",
+      code
+    ),
+
+    {
+      code:code,
+      plan:plan,
+      days:days,
+      used:false,
+      createdAt:Date.now()
+    },
+
+    { merge:true }
+
+  );
+
+  bot.sendMessage(
+    msg.chat.id,
+`✅ Gift code created
+
+🎁 Code:
+${code}
+
+💎 Plan:
+₹${plan}
+
+📅 Days:
+${days}`
+  );
+
+});
 
 // =========================
 // SAMPLE ANIME DATABASE
@@ -510,8 +579,9 @@ Example:
       {
         reply_markup: {
           keyboard: [
-            ["💎 Plans", "💳 Payment"],
-            ["👤 Account Info", "🔙 Back"]
+            ["💎 Plans","💳 Payment"],
+    ["👤 Account Info","🎁 Gift Code"],
+    ["🔙 Back"]           
           ],
           resize_keyboard: true
         }
@@ -841,7 +911,138 @@ Your personal data is not sold to third parties.
 Thank you for using MyFlix Premium 🎬`
     );
   }
+if(text === "🎁 Gift Code"){
 
+  redeemMode[chatId] = true;
+
+  return bot.sendMessage(
+    chatId,
+`🎁 Gift Code Center
+
+━━━━━━━━━━━━━━
+📌 Redeem Instructions
+━━━━━━━━━━━━━━
+
+Type your gift code below.
+
+Example:
+FREE20
+
+━━━━━━━━━━━━━━
+⚡ Benefits
+━━━━━━━━━━━━━━
+
+• Premium Access
+• Subscription Activation
+• Special Rewards
+
+Enter your gift code now 👇`
+  );
+
+}
+  if(redeemMode[chatId]){
+
+  delete redeemMode[chatId];
+
+  const code =
+    text
+    .trim()
+    .toUpperCase();
+const codeRef =
+  doc(
+    db,
+    "giftcodes",
+    code
+  );
+
+const codeSnap =
+  await getDoc(codeRef);
+const giftData =
+  codeSnap.data();
+
+if(!codeSnap.exists()){  
+
+    return bot.sendMessage(
+      chatId,
+`❌ Invalid gift code.`
+    );
+
+  }
+if(giftData.used){
+  
+    return bot.sendMessage(
+      chatId,
+`❌ Gift code already used.`
+    );
+
+  }
+
+  const user =
+    await getUser(chatId);
+
+  await setDoc(
+
+    doc(
+      db,
+      "users",
+      String(chatId)
+    ),
+
+    {
+      ...user,
+
+      plan:
+        giftData.plan,
+
+      expiry:
+        Date.now() +
+        (
+          giftData.days *
+          24 *
+          60 *
+          60 *
+          1000
+        )
+
+    },
+
+    { merge:true }
+
+  );
+await setDoc(
+
+  codeRef,
+
+  {
+    ...giftData,
+    used:true,
+    usedBy:chatId,
+    usedAt:Date.now()
+  },
+
+  { merge:true }
+
+);
+  
+
+  return bot.sendMessage(
+    chatId,
+`✅ Gift Code Redeemed
+
+━━━━━━━━━━━━━━
+🎁 Reward Activated
+━━━━━━━━━━━━━━
+
+💎 Plan:
+₹${giftCodes[code].plan}
+
+📅 Validity:
+${giftCodes[code].days} Days
+
+Enjoy Premium Access 🎬`
+  );
+
+  }
   // =========================
   // BACK
   // =========================
@@ -1161,7 +1362,48 @@ viramdevraj20@fam
     );
   }
 });
+bot.onText(
+/\/deletegift (.+)/,
+async (msg,match)=>{
 
+  if(msg.chat.id !== ADMIN_ID){
+    return;
+  }
+
+  const code =
+    match[1]
+    .trim()
+    .toUpperCase();
+
+  const codeRef =
+    doc(
+      db,
+      "giftcodes",
+      code
+    );
+
+  const snap =
+    await getDoc(codeRef);
+
+  if(!snap.exists()){
+
+    return bot.sendMessage(
+      msg.chat.id,
+`❌ Gift code not found`
+    );
+
+  }
+
+  await deleteDoc(codeRef);
+
+  bot.sendMessage(
+    msg.chat.id,
+`✅ Gift code deleted
+
+🎁 ${code}`
+  );
+
+});
 // =========================
 // ADMIN PLAN ACTIVATION
 // =========================
